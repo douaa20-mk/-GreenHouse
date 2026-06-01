@@ -11,6 +11,23 @@ let espIP = '192.168.1.100';
 let camURL = '';
 let camPaused = false;
 let currentChartRange = 'hour';
+let currentUser = null;
+
+// USER ACCOUNTS MANAGEMENT
+let userAccounts = JSON.parse(localStorage.getItem('userAccounts')) || {
+  'admin': { password: 'admin123', createdDate: new Date().toLocaleDateString() },
+  'user': { password: 'user123', createdDate: new Date().toLocaleDateString() }
+};
+
+function initializeAuth() {
+  currentUser = localStorage.getItem('currentUser');
+  if (!currentUser) {
+    showLoginModal();
+  } else {
+    hideLoginModal();
+    updateUserDisplay();
+  }
+}
 
 // CHART DATA
 let tempData = {
@@ -43,8 +60,147 @@ let chartLabels = {
 // CHART INSTANCES
 let tempChart = null, humChart = null, analyticsTempChart = null, analyticsDualChart = null, analyticsCo2Chart = null, deviceActivityChart = null;
 
+// ============ AUTHENTICATION ============
+function showLoginModal() {
+  const modal = document.getElementById('loginModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function hideLoginModal() {
+  const modal = document.getElementById('loginModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function updateUserDisplay() {
+  const usernameDisplay = document.getElementById('currentUsername');
+  const settingsCurrentUser = document.getElementById('settingsCurrentUser');
+  if (usernameDisplay) usernameDisplay.textContent = currentUser || 'Admin';
+  if (settingsCurrentUser) settingsCurrentUser.textContent = currentUser || 'Admin';
+}
+
+function setupAuthHandlers() {
+  const loginForm = document.getElementById('loginForm');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const createAccountForm = document.getElementById('createAccountForm');
+  const goToCreateAccount = document.getElementById('goToCreateAccount');
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      if (userAccounts[username] && userAccounts[username].password === password) {
+        currentUser = username;
+        localStorage.setItem('currentUser', username);
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        hideLoginModal();
+        updateUserDisplay();
+        showToast(`Welcome ${username}!`, 'success');
+        addHistory(`${username} logged in`, "System");
+      } else {
+        showToast("Invalid username or password", "error");
+      }
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      if (confirm("Are you sure you want to logout?")) {
+        addHistory(`${currentUser} logged out`, "System");
+        localStorage.removeItem('currentUser');
+        currentUser = null;
+        showLoginModal();
+        showToast("Logged out successfully", "success");
+      }
+    });
+  }
+
+  if (goToCreateAccount) {
+    goToCreateAccount.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelector('.nav-link[data-page="settings"]').click();
+    });
+  }
+
+  if (createAccountForm) {
+    createAccountForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newUsername = document.getElementById('newUsername').value.trim();
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      // Validation
+      if (newUsername.length < 3) {
+        showToast("Username must be at least 3 characters", "warning");
+        return;
+      }
+      if (newPassword.length < 4) {
+        showToast("Password must be at least 4 characters", "warning");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showToast("Passwords do not match", "error");
+        return;
+      }
+      if (userAccounts[newUsername]) {
+        showToast("Username already exists", "warning");
+        return;
+      }
+
+      // Create account
+      userAccounts[newUsername] = {
+        password: newPassword,
+        createdDate: new Date().toLocaleDateString()
+      };
+      localStorage.setItem('userAccounts', JSON.stringify(userAccounts));
+      
+      // Clear form
+      document.getElementById('newUsername').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+      
+      // Update users list
+      renderUsersList();
+      addHistory(`New account created: ${newUsername}`, "System");
+      showToast(`Account "${newUsername}" created successfully!`, 'success');
+    });
+  }
+
+  // Render users list on settings page load
+  renderUsersList();
+}
+
+function renderUsersList() {
+  const usersTable = document.getElementById('usersTable');
+  if (!usersTable) return;
+
+  const users = Object.keys(userAccounts);
+  if (users.length === 0) {
+    usersTable.innerHTML = '<p style="text-align: center; padding: 15px;">No users registered</p>';
+    return;
+  }
+
+  let html = '';
+  users.forEach(username => {
+    const account = userAccounts[username];
+    const isCurrent = username === currentUser ? ' (Current User)' : '';
+    html += `
+      <div class="user-item">
+        <div>
+          <strong><i class="fas fa-user"></i> ${username}</strong>
+          <small style="display: block; color: var(--gray-500); font-size: 0.85rem;">Created: ${account.createdDate}${isCurrent}</small>
+        </div>
+      </div>
+    `;
+  });
+  usersTable.innerHTML = html;
+}
+
 // ============ INITIALIZATION ============
 document.addEventListener('DOMContentLoaded', () => {
+  initializeAuth();
   initTheme();
   initCharts();
   loadSettings();
@@ -56,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupChartControls();
   setupDeviceButtons();
   setupExportButtons();
+  setupAuthHandlers();
   updateUI();
   renderHistoryTable();
   renderAlerts();
