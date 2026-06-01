@@ -11,6 +11,33 @@
 </head>
 <body>
   <div class="app">
+    <!-- LOGIN MODAL -->
+    <div class="login-modal" id="loginModal">
+      <div class="login-container">
+        <div class="login-header">
+          <i class="fas fa-leaf login-logo"></i>
+          <h1>GreenHouse<span>Pro</span></h1>
+          <p>Smart Greenhouse Management System</p>
+        </div>
+        <form id="loginForm" class="login-form">
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="loginUsername" placeholder="Enter username" required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="loginPassword" placeholder="Enter password" required>
+          </div>
+          <button type="submit" class="login-btn">
+            <i class="fas fa-sign-in-alt"></i> Login
+          </button>
+        </form>
+        <div class="login-footer">
+          <p>Don't have an account? <a href="#" id="goToCreateAccount">Create one in Settings</a></p>
+        </div>
+      </div>
+    </div>
+
     <!-- LEFT SIDEBAR - Desktop only, hidden on mobile -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
@@ -72,9 +99,12 @@
           <button class="icon-btn" id="themeToggle">
             <i class="fas fa-moon"></i>
           </button>
-          <div class="user-profile">
+          <div class="user-profile" id="userProfile">
             <i class="fas fa-user-circle"></i>
-            <span>Admin</span>
+            <span id="currentUsername">Admin</span>
+            <button class="logout-btn" id="logoutBtn" title="Logout">
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
           </div>
         </div>
       </header>
@@ -368,6 +398,41 @@
             <h2><i class="fas fa-cog"></i> System Settings</h2>
           </div>
           <div class="settings-grid">
+            <div class="card">
+              <div class="card-header">Account Management</div>
+              <div class="settings-body">
+                <div class="account-info">
+                  <p><strong>Current User:</strong> <span id="settingsCurrentUser">Admin</span></p>
+                  <hr style="margin: 15px 0; border: none; border-top: 1px solid var(--gray-200);">
+                </div>
+                <h3 style="margin-top: 15px; margin-bottom: 10px; font-size: 0.95rem;"><i class="fas fa-user-plus"></i> Create New Account</h3>
+                <form id="createAccountForm" class="create-account-form">
+                  <div class="form-group-inline">
+                    <div class="form-group">
+                      <label>New Username</label>
+                      <input type="text" id="newUsername" placeholder="Enter username" minlength="3" maxlength="20">
+                    </div>
+                    <div class="form-group">
+                      <label>New Password</label>
+                      <input type="password" id="newPassword" placeholder="Enter password" minlength="4" maxlength="20">
+                    </div>
+                  </div>
+                  <div class="form-group-inline">
+                    <div class="form-group">
+                      <label>Confirm Password</label>
+                      <input type="password" id="confirmPassword" placeholder="Confirm password" minlength="4" maxlength="20">
+                    </div>
+                  </div>
+                  <button type="submit" class="save-btn">
+                    <i class="fas fa-user-plus"></i> Create Account
+                  </button>
+                </form>
+                <div id="accountsList" style="margin-top: 20px;">
+                  <h3 style="font-size: 0.95rem; margin-bottom: 10px;"><i class="fas fa-users"></i> Registered Users</h3>
+                  <div id="usersTable" style="background: var(--gray-50); padding: 10px; border-radius: 8px; font-size: 0.9rem;"></div>
+                </div>
+              </div>
+            </div>
             <div class="card">
               <div class="card-header">ESP32 Connection</div>
               <div class="settings-body">
